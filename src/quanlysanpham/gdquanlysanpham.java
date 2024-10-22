@@ -98,88 +98,190 @@ public class gdquanlysanpham extends JFrame {
 		contentPane.setLayout(null);
 		
 		JLabel lblNewLabel = new JLabel("SẢN PHẨM");
-		lblNewLabel.setBounds(10, 10, 61, 13);
+		lblNewLabel.setBounds(10, 10, 85, 30);
 		contentPane.add(lblNewLabel);
+		comboBox.setMaximumRowCount(10);
 		
 		
 		comboBox.setModel(new DefaultComboBoxModel(new String[] {"Điện thoại", "Điện máy"}));
-		comboBox.setBounds(10, 50, 77, 19);
+		comboBox.setBounds(50, 50, 85, 21);
 		contentPane.add(comboBox);
 		
 		JLabel lblNewLabel_1 = new JLabel("Mã sp");
-		lblNewLabel_1.setBounds(97, 51, 48, 16);
+		lblNewLabel_1.setBounds(145, 51, 48, 16);
 		contentPane.add(lblNewLabel_1);
 		
 		txtmasp = new JTextField();
-		txtmasp.setBounds(155, 50, 96, 19);
+		txtmasp.setBounds(213, 50, 96, 19);
 		contentPane.add(txtmasp);
 		txtmasp.setColumns(10);
 		
 		JLabel lblNewLabel_1_1 = new JLabel("Tên sp");
-		lblNewLabel_1_1.setBounds(97, 78, 48, 16);
+		lblNewLabel_1_1.setBounds(145, 80, 48, 16);
 		contentPane.add(lblNewLabel_1_1);
 		
 		txttensp = new JTextField();
 		txttensp.setColumns(10);
-		txttensp.setBounds(155, 77, 96, 19);
+		txttensp.setBounds(213, 79, 96, 19);
 		contentPane.add(txttensp);
 		
 		txtsl = new JTextField();
 		txtsl.setColumns(10);
-		txtsl.setBounds(155, 104, 96, 19);
+		txtsl.setBounds(213, 108, 96, 19);
 		contentPane.add(txtsl);
 		
 		JLabel lblNewLabel_1_1_1 = new JLabel("Số lượng");
-		lblNewLabel_1_1_1.setBounds(97, 105, 48, 16);
+		lblNewLabel_1_1_1.setBounds(145, 109, 58, 16);
 		contentPane.add(lblNewLabel_1_1_1);
 		
 		txtdg = new JTextField();
 		txtdg.setColumns(10);
-		txtdg.setBounds(155, 133, 96, 19);
+		txtdg.setBounds(213, 133, 96, 19);
 		contentPane.add(txtdg);
 		
 		JLabel lblNewLabel_1_1_1_1 = new JLabel("Đơn giá");
-		lblNewLabel_1_1_1_1.setBounds(97, 134, 48, 16);
+		lblNewLabel_1_1_1_1.setBounds(145, 134, 48, 16);
 		contentPane.add(lblNewLabel_1_1_1_1);
 		
 		JButton btnNewButton = new JButton("Thêm");
 		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				SANPHAM s=null;
-				String masp=txtmasp.getText();
-				String tensp=txttensp.getText();
-				float sl=Float.parseFloat(txtsl.getText());
-				float dg=Float.parseFloat(txtdg.getText());
-				if(comboBox.getSelectedIndex()==0) {
-					s=new DIENTHOAI(masp,tensp,sl,dg);
-				}
-				if(comboBox.getSelectedIndex()==1) {
-					s=new DIENMAY(masp,tensp,sl,dg);
-				}
-				lbltt.setText(""+tt);
-				Nhap(s);
-				dtm.setDataVector(Vndung, Vtieude);
-				table.setModel(dtm);
-			}
+		    public void actionPerformed(ActionEvent arg0) {
+		        SANPHAM s = null;
+		        String masp = txtmasp.getText();
+		        String tensp = txttensp.getText();
+		        float sl = Float.parseFloat(txtsl.getText());
+		        float dg = Float.parseFloat(txtdg.getText());
+
+		        if (comboBox.getSelectedIndex() == 0) {
+		            s = new DIENTHOAI(masp, tensp, sl, dg);
+		        } else if (comboBox.getSelectedIndex() == 1) {
+		            s = new DIENMAY(masp, tensp, sl, dg);
+		        }
+
+		        Nhap(s);  
+
+		        lbltt.setText("" + tt); 
+
+		        dtm.setDataVector(Vndung, Vtieude);
+		        table.setModel(dtm);
+
+		        txtmasp.setText("");
+		        txttensp.setText("");
+		        txtsl.setText("");
+		        txtdg.setText("");
+
+		        txtmasp.requestFocus();
+		    }
 		});
-		btnNewButton.setBounds(10, 162, 85, 21);
+		btnNewButton.setBounds(50, 162, 85, 21);
 		contentPane.add(btnNewButton);
+		
+		JButton btnEdit = new JButton("Sửa");
+		btnEdit.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent arg0) {
+		        int selectedRow = table.getSelectedRow();
+
+		        if (selectedRow != -1) {
+		            Vector selectedRowData = (Vector) Vndung.get(selectedRow);
+
+		            txtmasp.setText((String) selectedRowData.get(0)); 
+		            txttensp.setText((String) selectedRowData.get(1));  
+		            if (selectedRowData.get(2).equals("Điện thoại")) {
+		                comboBox.setSelectedIndex(0); 
+		            } else if (selectedRowData.get(2).equals("Điện máy")) {
+		                comboBox.setSelectedIndex(1);
+		            }
+		            txtsl.setText(selectedRowData.get(4).toString());  
+		            txtdg.setText(selectedRowData.get(5).toString()); 
+
+		            btnEdit.setText("Cập nhật");
+		        } else {
+		            System.out.println("Vui lòng chọn sản phẩm cần chỉnh sửa!");
+		        }
+		    }
+		});
+
+		btnEdit.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent arg0) {
+		        if (btnEdit.getText().equals("Cập nhật")) {
+		            int selectedRow = table.getSelectedRow();
+
+		            if (selectedRow != -1) {
+		                Vector selectedRowData = (Vector) Vndung.get(selectedRow);
+		                
+		                selectedRowData.set(0, txtmasp.getText());  
+		                selectedRowData.set(1, txttensp.getText());  
+		                if (comboBox.getSelectedIndex() == 0) {
+		                    selectedRowData.set(2, "Điện thoại");  
+		                    selectedRowData.set(3, "20%");  
+		                } else {
+		                    selectedRowData.set(2, "Điện máy");
+		                    selectedRowData.set(3, "10%");
+		                }
+		                float soluong = Float.parseFloat(txtsl.getText());
+		                float dongia = Float.parseFloat(txtdg.getText());
+		                selectedRowData.set(4, soluong);  
+		                selectedRowData.set(5, dongia);  
+		                
+		                float thanhtienMoi = soluong * dongia * (comboBox.getSelectedIndex() == 0 ? 0.8f : 0.9f);
+		                selectedRowData.set(6, thanhtienMoi);
+
+		                float thanhtienCu = (float) selectedRowData.get(6); 
+		                tt = tt - thanhtienCu + thanhtienMoi;  
+		                lbltt.setText("" + tt);
+
+		                dtm.setDataVector(Vndung, Vtieude);
+		                table.setModel(dtm);
+
+		                btnEdit.setText("Sửa");
+		                
+		                txtmasp.setText("");
+		                txttensp.setText("");
+		                txtsl.setText("");
+		                txtdg.setText("");
+
+		                txtmasp.requestFocus();
+
+		                
+		            } else {
+		                System.out.println("Vui lòng chọn sản phẩm cần cập nhật!");
+		            }
+		        }
+		    }
+		});
+		btnEdit.setBounds(155, 162, 85, 21);  
+		contentPane.add(btnEdit);
+
 		
 		JButton btnNewButton_1 = new JButton("Xóa");
 		btnNewButton_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				txtdg.setText("");
-				txtmasp.setText("");
-				txtsl.setText("");
-				txttensp.setText("");
-				Vdong.clear();
-				dtm.setDataVector(Vdong, Vtieude);
-				table.setModel(dtm);
-				
-			}
+		    public void actionPerformed(ActionEvent arg0) {
+		        int selectedRow = table.getSelectedRow();
+
+		        if (selectedRow != -1) {
+		            Vector selectedRowData = (Vector) Vndung.get(selectedRow);
+		            float thanhtien = (float) selectedRowData.get(6);  
+		            tt -= thanhtien; 
+		            lbltt.setText("" + tt);  
+
+		            Vndung.remove(selectedRow);
+
+		            dtm.setDataVector(Vndung, Vtieude);
+		            table.setModel(dtm);
+		        } else {
+		        	 Vndung.clear();  
+		             dtm.setDataVector(Vndung, Vtieude); 
+		             table.setModel(dtm); 
+		             
+		             tt = 0;
+		             lbltt.setText("0");
+		        }
+		    }
 		});
-		btnNewButton_1.setBounds(127, 162, 85, 21);
+		btnNewButton_1.setBounds(258, 162, 85, 21);
 		contentPane.add(btnNewButton_1);
+		
+		
 		
 		JButton btnNewButton_1_1 = new JButton("Thoát");
 		btnNewButton_1_1.addActionListener(new ActionListener() {
@@ -187,7 +289,7 @@ public class gdquanlysanpham extends JFrame {
 				System.exit(0);
 			}
 		});
-		btnNewButton_1_1.setBounds(241, 160, 85, 21);
+		btnNewButton_1_1.setBounds(361, 162, 85, 21);
 		contentPane.add(btnNewButton_1_1);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -206,7 +308,7 @@ public class gdquanlysanpham extends JFrame {
 		scrollPane.setViewportView(table);
 		
 		JLabel lblNewLabel_1_2 = new JLabel("Tổng thành tiền");
-		lblNewLabel_1_2.setBounds(170, 310, 85, 16);
+		lblNewLabel_1_2.setBounds(199, 310, 110, 16);
 		contentPane.add(lblNewLabel_1_2);
 		
 		
