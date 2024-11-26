@@ -26,4 +26,13 @@ public class MySQLConnection {
         return connection;
     }
 
+    public static void main(String[] args) {
+        // Test the connection
+        Connection connection = getConnection();
+        if (connection != null) {
+            System.out.println("Kết nối hoạt động tốt!");
+        } else {
+            System.out.println("Kết nối không thành công!");
+        }
+    }
 }

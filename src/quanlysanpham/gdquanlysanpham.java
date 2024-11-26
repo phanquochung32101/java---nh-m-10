@@ -66,16 +66,16 @@ public class gdquanlysanpham extends JFrame {
 		tt += SP.tinhtien();
 	}
 
-//	public static void main(String[] args) {
-//		EventQueue.invokeLater(() -> {
-//			try {
-//				gdquanlysanpham frame = new gdquanlysanpham();
-//				frame.setVisible(true);
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		});
-//	}
+	public static void main(String[] args) {
+		EventQueue.invokeLater(() -> {
+			try {
+				gdquanlysanpham frame = new gdquanlysanpham();
+				frame.setVisible(true);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+	}
 
 	public gdquanlysanpham() {
 		Tieude();
@@ -198,27 +198,57 @@ public class gdquanlysanpham extends JFrame {
 					if (selectedRow != -1) {
 						Vector<Object> selectedRowData = Vndung.get(selectedRow);
 
-						selectedRowData.set(0, txtmasp.getText());
-						selectedRowData.set(1, txttensp.getText());
-						selectedRowData.set(2, comboBox.getSelectedIndex() == 0 ? "Điện thoại" : "Điện máy");
-						selectedRowData.set(3, comboBox.getSelectedIndex() == 0 ? "20%" : "10%");
+						// Lấy dữ liệu mới từ các trường nhập
+						String masp = txtmasp.getText();
+						String tensp = txttensp.getText();
+						String loaisp = comboBox.getSelectedIndex() == 0 ? "Điện thoại" : "Điện máy";
+						String khuyenmai = comboBox.getSelectedIndex() == 0 ? "20%" : "10%";
 						float soluong = Float.parseFloat(txtsl.getText());
 						float dongia = Float.parseFloat(txtdg.getText());
-						selectedRowData.set(4, soluong);
-						selectedRowData.set(5, dongia);
-
 						float thanhtienMoi = soluong * dongia * (comboBox.getSelectedIndex() == 0 ? 0.8f : 0.9f);
-						selectedRowData.set(6, thanhtienMoi);
 
+						// Cập nhật vào cơ sở dữ liệu
+						try (Connection conn = MySQLConnection.getConnection();
+							 PreparedStatement pstmt = conn.prepareStatement(
+									 "UPDATE sanpham SET tensp = ?, loaisp = ?, khuyenmai = ?, soluong = ?, dongia = ?, thanhtien = ? WHERE masp = ?"
+							 )) {
+							pstmt.setString(1, tensp);
+							pstmt.setString(2, loaisp);
+							pstmt.setString(3, khuyenmai);
+							pstmt.setFloat(4, soluong);
+							pstmt.setFloat(5, dongia);
+							pstmt.setFloat(6, thanhtienMoi);
+							pstmt.setString(7, masp);
+
+							int rowsAffected = pstmt.executeUpdate();
+							if (rowsAffected > 0) {
+								System.out.println("Cập nhật sản phẩm thành công!");
+							} else {
+								System.out.println("Không tìm thấy sản phẩm để cập nhật!");
+							}
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+
+						// Cập nhật lại JTable
 						float thanhtienCu = (float) selectedRowData.get(6);
 						tt = tt - thanhtienCu + thanhtienMoi;
-						lbltt.setText("" + tt);
+						lbltt.setText("Tổng thành tiền: " + tt);
+
+						selectedRowData.set(0, masp);
+						selectedRowData.set(1, tensp);
+						selectedRowData.set(2, loaisp);
+						selectedRowData.set(3, khuyenmai);
+						selectedRowData.set(4, soluong);
+						selectedRowData.set(5, dongia);
+						selectedRowData.set(6, thanhtienMoi);
 
 						dtm.setDataVector(Vndung, Vtieude);
 						table.setModel(dtm);
 
 						btnEdit.setText("Sửa");
 
+						// Reset các trường nhập
 						txtmasp.setText("");
 						txttensp.setText("");
 						txtsl.setText("");
@@ -239,10 +269,27 @@ public class gdquanlysanpham extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				int selectedRow = table.getSelectedRow();
 				if (selectedRow != -1) {
-					Vector<Object> selectedRowData = Vndung.get(selectedRow);
-					float thanhtien = (float) selectedRowData.get(6);
+					// Lấy mã sản phẩm từ hàng đã chọn
+					String masp = (String) Vndung.get(selectedRow).get(0);
+
+					// Xóa sản phẩm trong cơ sở dữ liệu
+					try (Connection conn = MySQLConnection.getConnection();
+						 PreparedStatement pstmt = conn.prepareStatement("DELETE FROM sanpham WHERE masp = ?")) {
+						pstmt.setString(1, masp);
+						int rowsAffected = pstmt.executeUpdate();
+						if (rowsAffected > 0) {
+							System.out.println("Xóa sản phẩm thành công trong cơ sở dữ liệu!");
+						} else {
+							System.out.println("Không tìm thấy sản phẩm để xóa!");
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+
+					// Cập nhật JTable
+					float thanhtien = (float) Vndung.get(selectedRow).get(6);
 					tt -= thanhtien;
-					lbltt.setText("" + tt);
+					lbltt.setText("Tổng thành tiền: " + tt);
 					Vndung.remove(selectedRow);
 					dtm.setDataVector(Vndung, Vtieude);
 					table.setModel(dtm);
@@ -251,6 +298,7 @@ public class gdquanlysanpham extends JFrame {
 				}
 			}
 		});
+
 		btnDelete.setBounds(240, 162, 85, 21);
 		contentPane.add(btnDelete);
 
@@ -258,44 +306,59 @@ public class gdquanlysanpham extends JFrame {
 		scrollPane.setBounds(10, 195, 500, 120);
 		contentPane.add(scrollPane);
 
-		table = new JTable();
+		table = new JTable() {
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				// Không cho phép chỉnh sửa trực tiếp trên bảng
+				return false;
+			}
+		};
 		scrollPane.setViewportView(table);
 
 		lbltt.setForeground(Color.RED);
-		lbltt.setBounds(400, 320, 100, 30);
+		lbltt.setBounds(200, 320, 150, 30);
 		contentPane.add(lbltt);
 		
 		JButton btnView = new JButton("xem danh sách");
 		btnView.setBounds(335, 162, 107, 21);
 		contentPane.add(btnView);
 		btnView.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent arg0) {
-		        // Clear existing data in the table
-		        Vndung.clear();
-		        
-		        // Retrieve products from database
-		        try (Connection conn = MySQLConnection.getConnection(); 
-		             Statement stmt = conn.createStatement()) {
-		            ResultSet rs = stmt.executeQuery("SELECT * FROM quanlysanpham.sanpham");
-		            while (rs.next()) {
-		                Vector<Object> Vdong = new Vector<>();
-		                Vdong.add(rs.getString("masp"));
-		                Vdong.add(rs.getString("tensp"));
-		                Vdong.add(rs.getString("loaisp"));
-		                Vdong.add(rs.getString("khuyenmai"));
-		                Vdong.add(rs.getFloat("soluong"));
-		                Vdong.add(rs.getFloat("dongia"));
-		                Vdong.add(rs.getFloat("thanhtien"));
-		                Vndung.add(Vdong);
-		            }
-		            // Refresh the table model with the new data
-		            dtm.setDataVector(Vndung, Vtieude);
-		            table.setModel(dtm);
-		        } catch (SQLException e) {
-		            e.printStackTrace();
-		        }
-		    }
-		});
+			public void actionPerformed(ActionEvent arg0) {
+				// Clear existing data in the table
+				Vndung.clear();
+				tt = 0; // Đặt lại tổng thành tiền
+
+				// Retrieve products from database sorted by masp
+				try (Connection conn = MySQLConnection.getConnection();
+					 Statement stmt = conn.createStatement()) {
+					ResultSet rs = stmt.executeQuery("SELECT * FROM quanlysanpham.sanpham ORDER BY masp ASC");
+					while (rs.next()) {
+						Vector<Object> Vdong = new Vector<>();
+						Vdong.add(rs.getString("masp"));
+						Vdong.add(rs.getString("tensp"));
+						Vdong.add(rs.getString("loaisp"));
+						Vdong.add(rs.getString("khuyenmai"));
+						Vdong.add(rs.getFloat("soluong"));
+						Vdong.add(rs.getFloat("dongia"));
+						float thanhTien = rs.getFloat("thanhtien");
+						Vdong.add(thanhTien);
+
+						// Tính tổng thành tiền
+						tt += thanhTien;
+
+						Vndung.add(Vdong);
+					}
+					// Refresh the table model with the new data
+					dtm.setDataVector(Vndung, Vtieude);
+					table.setModel(dtm);
+
+					// Hiển thị tổng thành tiền
+					lbltt.setText("Tổng thành tiền: " + tt);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		});//
 	}
 	
 
